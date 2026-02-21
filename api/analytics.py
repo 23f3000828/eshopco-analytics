@@ -1,6 +1,5 @@
 import json
 import statistics
-import numpy as np
 import os
 
 def handler(request, context):
@@ -21,18 +20,18 @@ def handler(request, context):
         }
 
     try:
-        body = json.loads(request.body.decode())
-    except:
+        body = json.loads(request.body)
+    except Exception as e:
         return {
             "statusCode": 400,
             "headers": cors_headers(),
-            "body": "Invalid JSON"
+            "body": f"Invalid JSON: {str(e)}"
         }
 
     regions = body.get("regions", [])
     threshold = body.get("threshold_ms", 180)
 
-    # Correct file path for Vercel
+    # Correct file path
     base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     file_path = os.path.join(base_path, "telemetry.json")
 
@@ -47,9 +46,14 @@ def handler(request, context):
         uptimes = [r["uptime"] for r in records]
 
         if latencies:
-            avg_latency = statistics.mean(latencies)
-            p95_latency = float(np.percentile(latencies, 95))
-            avg_uptime = statistics.mean(uptimes)
+            avg_latency = sum(latencies) / len(latencies)
+
+            # Manual p95 (no numpy)
+            sorted_lat = sorted(latencies)
+            index = int(0.95 * (len(sorted_lat) - 1))
+            p95_latency = sorted_lat[index]
+
+            avg_uptime = sum(uptimes) / len(uptimes)
             breaches = sum(1 for l in latencies if l > threshold)
         else:
             avg_latency = 0
