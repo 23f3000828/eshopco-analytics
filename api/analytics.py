@@ -2,21 +2,32 @@ import json
 import statistics
 import numpy as np
 
-def handler(request):
+def handler(request, context):
+
+    # Handle CORS preflight
     if request.method == "OPTIONS":
         return {
             "statusCode": 200,
             "headers": cors_headers(),
+            "body": ""
         }
 
     if request.method != "POST":
         return {
             "statusCode": 405,
-            "body": "Method Not Allowed",
             "headers": cors_headers(),
+            "body": "Method Not Allowed"
         }
 
-    body = json.loads(request.body)
+    try:
+        body = json.loads(request.body)
+    except:
+        return {
+            "statusCode": 400,
+            "headers": cors_headers(),
+            "body": "Invalid JSON"
+        }
+
     regions = body.get("regions", [])
     threshold = body.get("threshold_ms", 180)
 
@@ -53,6 +64,7 @@ def handler(request):
         "headers": cors_headers(),
         "body": json.dumps(result)
     }
+
 
 def cors_headers():
     return {
