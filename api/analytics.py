@@ -1,10 +1,11 @@
 import json
 import statistics
 import numpy as np
+import os
 
 def handler(request, context):
 
-    # Handle CORS preflight
+    # CORS preflight
     if request.method == "OPTIONS":
         return {
             "statusCode": 200,
@@ -20,7 +21,7 @@ def handler(request, context):
         }
 
     try:
-        body = json.loads(request.body)
+        body = json.loads(request.body.decode())
     except:
         return {
             "statusCode": 400,
@@ -31,7 +32,11 @@ def handler(request, context):
     regions = body.get("regions", [])
     threshold = body.get("threshold_ms", 180)
 
-    with open("telemetry.json") as f:
+    # Correct file path for Vercel
+    base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    file_path = os.path.join(base_path, "telemetry.json")
+
+    with open(file_path) as f:
         data = json.load(f)
 
     result = {}
